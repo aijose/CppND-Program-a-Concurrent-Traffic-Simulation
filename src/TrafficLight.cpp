@@ -1,5 +1,6 @@
 #include <iostream>
 #include <random>
+#include <future>
 #include "TrafficLight.h"
 
 /* Implementation of class "MessageQueue" */
@@ -11,7 +12,7 @@ T MessageQueue<T>::receive()
     // to wait for and receive new messages and pull them from the queue using move semantics. 
     // The received object should then be returned by the receive function. 
     std::unique_lock<std::mutex> ulck(_mutex);
-    _cont.wait(ulck, []{return !_queue.empty();})
+    _condition.wait(ulck, [this]{return !_queue.empty();});
 
     T msg = std::move(_queue.front());
     _queue.pop_front();
@@ -55,8 +56,9 @@ TrafficLightPhase TrafficLight::getCurrentPhase()
 
 void TrafficLight::simulate()
 {
-    // FP.2b : Finally, the private method „cycleThroughPhases“ should be started in a thread when the public method „simulate“ is called. To do this, use the thread queue in the base class. 
-    std::thread t = std::async(&TrafficLight::cycleThroughPhases, this);
+    // FP.2b : Finally, the private method „cycleThroughPhases“ should be started in a thread when the public method „simulate“ is called. 
+    // To do this, use the thread queue in the base class. 
+    threads.emplace_back(std::thread(&TrafficLight::cycleThroughPhases, this));
 }
 
 // virtual function which is executed in a thread
@@ -78,7 +80,7 @@ void TrafficLight::cycleThroughPhases()
         if (remaining_milliseconds <= 0.0)
         {
             _currentPhase = (_currentPhase == TrafficLightPhase::red) ? TrafficLightPhase::green : TrafficLightPhase::red;
-            _queue.send(std::move());
+            _queue.send(std::move(_currentPhase));
             break;
         }
 
