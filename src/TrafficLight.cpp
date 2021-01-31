@@ -26,7 +26,7 @@ void MessageQueue<T>::send(T &&msg)
     // FP.4a : The method send should use the mechanisms std::lock_guard<std::mutex> 
     // as well as _condition.notify_one() to add a new message to the queue and afterwards send a notification.
     std::lock_guard<std::mutex> lck(_mutex);
-    _queue.push_back(std::move(msg));
+    _queue.emplace_back(std::move(msg));
     _condition.notify_one();
 }
 
@@ -70,20 +70,17 @@ void TrafficLight::cycleThroughPhases()
     // Also, the while-loop should use std::this_thread::sleep_for to wait 1ms between two cycles. 
 
     int range_min = 4000, range_max = 6000;
-    int cycle_duration_ms = range_min + rand() % (range_max - range_min + 1);
-    double remaining_milliseconds = static_cast<double>(cycle_duration_ms);
+    double cycle_duration_ms = static_cast<double>(range_min + rand() % (range_max - range_min + 1));
     auto time_prev = std::chrono::steady_clock::now();
     while (true)
     {
         auto time_now = std::chrono::steady_clock::now();
-        double time_difference = std::chrono::duration_cast<std::chrono::microseconds>(time_now - time_prev).count()/1000.0;
-        remaining_milliseconds -= time_difference;
-        time_prev = time_now;
-        if (remaining_milliseconds <= 0.0)
+        double time_difference = std::chrono::duration_cast<std::chrono::milliseconds>(time_now - time_prev).count();
+        if (time_difference >= cycle_duration_ms)
         {
             _currentPhase = (_currentPhase == TrafficLightPhase::red) ? TrafficLightPhase::green : TrafficLightPhase::red;
-            cycle_duration_ms = range_min + rand() % (range_max - range_min + 1);
-            remaining_milliseconds = static_cast<double>(cycle_duration_ms);
+            time_prev = time_now;
+            cycle_duration_ms = static_cast<double>(range_min + rand() % (range_max - range_min + 1));
             _queue.send(std::move(getCurrentPhase()));
         }
 
