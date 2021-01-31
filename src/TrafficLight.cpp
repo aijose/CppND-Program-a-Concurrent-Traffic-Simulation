@@ -3,6 +3,9 @@
 #include <future>
 #include "TrafficLight.h"
 
+#define RANGE_MIN 4000
+#define RANGE_MAX 6000
+
 /* Implementation of class "MessageQueue" */
 
 template <typename T>
@@ -69,18 +72,22 @@ void TrafficLight::cycleThroughPhases()
     // to the message queue using move semantics. The cycle duration should be a random value between 4 and 6 seconds. 
     // Also, the while-loop should use std::this_thread::sleep_for to wait 1ms between two cycles. 
 
-    int range_min = 4000, range_max = 6000;
-    double cycle_duration_ms = static_cast<double>(range_min + rand() % (range_max - range_min + 1));
+    std::random_device rd;
+    std::default_random_engine generator(rd());
+    std::uniform_real_distribution<double> distribution(RANGE_MIN, RANGE_MAX);
+    double cycle_duration_ms = distribution(generator);
+    //double cycle_duration_ms = static_cast<double>(RANGE_MIN + rand() % (RANGE_MAX - RANGE_MIN + 1));
     auto time_prev = std::chrono::steady_clock::now();
     while (true)
     {
         auto time_now = std::chrono::steady_clock::now();
-        double time_difference = std::chrono::duration_cast<std::chrono::milliseconds>(time_now - time_prev).count();
+        int time_difference = std::chrono::duration_cast<std::chrono::milliseconds>(time_now - time_prev).count();
         if (time_difference >= cycle_duration_ms)
         {
             _currentPhase = (_currentPhase == TrafficLightPhase::red) ? TrafficLightPhase::green : TrafficLightPhase::red;
             time_prev = time_now;
-            cycle_duration_ms = static_cast<double>(range_min + rand() % (range_max - range_min + 1));
+            //cycle_duration_ms = static_cast<double>(RANGE_MIN + rand() % (RANGE_MAX - RANGE_MIN + 1));
+            cycle_duration_ms = distribution(generator);
             _queue.send(std::move(getCurrentPhase()));
         }
 
