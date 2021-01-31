@@ -78,17 +78,10 @@ void TrafficLight::cycleThroughPhases()
         auto time_now = std::chrono::steady_clock::now();
         double time_difference = std::chrono::duration_cast<std::chrono::microseconds>(time_now - time_prev).count()/1000.0;
         remaining_milliseconds -= time_difference;
-        //std::cout << std::endl << "remaining milliseconds = " << remaining_milliseconds << " time difference = " << time_difference << std::endl;
         time_prev = time_now;
         if (remaining_milliseconds <= 0.0)
         {
             _currentPhase = (_currentPhase == TrafficLightPhase::red) ? TrafficLightPhase::green : TrafficLightPhase::red;
-            /*
-            if (getCurrentPhase() == TrafficLightPhase::red)
-                std::cout << std::endl << "Flipping color to red" << std::endl;
-            else
-                std::cout << std::endl << "Flipping color to green" << std::endl;
-            */
             cycle_duration_ms = range_min + rand() % (range_max - range_min + 1);
             remaining_milliseconds = static_cast<double>(cycle_duration_ms);
             _queue.send(std::move(getCurrentPhase()));
