@@ -69,19 +69,29 @@ void TrafficLight::cycleThroughPhases()
     // to the message queue using move semantics. The cycle duration should be a random value between 4 and 6 seconds. 
     // Also, the while-loop should use std::this_thread::sleep_for to wait 1ms between two cycles. 
 
-    auto time_prev = std::chrono::steady_clock::now();
-    int cycle_duration_ms = 4000 + rand() % (6000 - 4000 + 1);
+    int range_min = 4000, range_max = 6000;
+    int cycle_duration_ms = range_min + rand() % (range_max - range_min + 1);
     double remaining_milliseconds = static_cast<double>(cycle_duration_ms);
+    auto time_prev = std::chrono::steady_clock::now();
     while (true)
     {
         auto time_now = std::chrono::steady_clock::now();
-        remaining_milliseconds -= std::chrono::duration_cast<std::chrono::microseconds>(time_now - time_prev).count()/1000.0;
+        double time_difference = std::chrono::duration_cast<std::chrono::microseconds>(time_now - time_prev).count()/1000.0;
+        remaining_milliseconds -= time_difference;
+        //std::cout << std::endl << "remaining milliseconds = " << remaining_milliseconds << " time difference = " << time_difference << std::endl;
         time_prev = time_now;
         if (remaining_milliseconds <= 0.0)
         {
             _currentPhase = (_currentPhase == TrafficLightPhase::red) ? TrafficLightPhase::green : TrafficLightPhase::red;
-            _queue.send(std::move(_currentPhase));
-            break;
+            /*
+            if (getCurrentPhase() == TrafficLightPhase::red)
+                std::cout << std::endl << "Flipping color to red" << std::endl;
+            else
+                std::cout << std::endl << "Flipping color to green" << std::endl;
+            */
+            cycle_duration_ms = range_min + rand() % (range_max - range_min + 1);
+            remaining_milliseconds = static_cast<double>(cycle_duration_ms);
+            _queue.send(std::move(getCurrentPhase()));
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
