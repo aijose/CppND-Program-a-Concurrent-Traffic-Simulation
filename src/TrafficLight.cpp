@@ -29,6 +29,7 @@ void MessageQueue<T>::send(T &&msg)
     // FP.4a : The method send should use the mechanisms std::lock_guard<std::mutex> 
     // as well as _condition.notify_one() to add a new message to the queue and afterwards send a notification.
     std::lock_guard<std::mutex> lck(_mutex);
+    _queue.clear();
     _queue.emplace_back(std::move(msg));
     _condition.notify_one();
 }
